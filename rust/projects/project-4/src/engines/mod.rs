@@ -1,9 +1,6 @@
-pub use self::kvs::KvStore;
-pub use self::sled::SledKvsEngine;
-use crate::Result;
+//! This module provides various key value storage engines.
 
-mod kvs;
-mod sled;
+use crate::Result;
 
 /// Trait for a key value storage engine.
 pub trait KvsEngine: Clone + Send + 'static {
@@ -24,3 +21,9 @@ pub trait KvsEngine: Clone + Send + 'static {
     /// It returns `KvsError::KeyNotFound` if the given key is not found.
     fn remove(&self, key: String) -> Result<()>;
 }
+
+mod kvs;
+mod sled;
+
+pub use self::kvs::KvStore;
+pub use self::sled::SledKvsEngine;

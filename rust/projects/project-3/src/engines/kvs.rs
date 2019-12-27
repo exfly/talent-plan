@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, HashMap};
+use std::ffi::OsStr;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::ops::Range;
@@ -7,9 +8,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::Deserializer;
 
-use super::KvsEngine;
 use crate::{KvsError, Result};
-use std::ffi::OsStr;
+use crate::engines::KvsEngine;
 
 const COMPACTION_THRESHOLD: u64 = 1024 * 1024;
 
@@ -23,7 +23,6 @@ const COMPACTION_THRESHOLD: u64 = 1024 * 1024;
 /// # use kvs::{KvStore, Result};
 /// # fn try_main() -> Result<()> {
 /// use std::env::current_dir;
-/// use kvs::KvsEngine;
 /// let mut store = KvStore::open(current_dir()?)?;
 /// store.set("key".to_owned(), "value".to_owned())?;
 /// let val = store.get("key".to_owned())?;
@@ -56,7 +55,7 @@ impl KvStore {
     pub fn open(path: impl Into<PathBuf>) -> Result<KvStore> {
         let path = path.into();
         fs::create_dir_all(&path)?;
-
+        info!("data dir had created: {:?}", path);
         let mut readers = HashMap::new();
         let mut index = BTreeMap::new();
 
@@ -119,7 +118,6 @@ impl KvStore {
             self.readers.remove(&stale_gen);
             fs::remove_file(log_path(&self.path, stale_gen))?;
         }
-
         self.uncompacted = 0;
 
         Ok(())
@@ -184,7 +182,7 @@ impl KvsEngine for KvStore {
 
     /// Removes a given key.
     ///
-    /// # Error
+    /// # Errors
     ///
     /// It returns `KvsError::KeyNotFound` if the given key is not found.
     ///
@@ -277,7 +275,7 @@ fn load(
 }
 
 fn log_path(dir: &Path, gen: u64) -> PathBuf {
-    dir.join(format!("{}.log", gen))
+    dir.join(format!("{:016}.log", gen))
 }
 
 /// Struct representing a command

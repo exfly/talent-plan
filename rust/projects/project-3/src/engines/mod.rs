@@ -1,5 +1,3 @@
-//! This module provides various key value storage engines.
-
 use crate::Result;
 
 /// Trait for a key value storage engine.

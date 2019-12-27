@@ -1,6 +1,3 @@
-#![deny(missing_docs)]
-//! A simple key/value store.
-
 #[macro_use]
 extern crate log;
 

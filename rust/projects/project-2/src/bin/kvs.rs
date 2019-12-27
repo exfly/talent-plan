@@ -1,6 +1,9 @@
 use clap::{App, AppSettings, Arg, SubCommand};
+
 use kvs::{KvStore, KvsError, Result};
+
 use std::env::current_dir;
+use std::path::{PathBuf};
 use std::process::exit;
 
 fn main() -> Result<()> {
@@ -11,6 +14,7 @@ fn main() -> Result<()> {
         .setting(AppSettings::DisableHelpSubcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
+        .arg(Arg::with_name("data").help("data dir"))
         .subcommand(
             SubCommand::with_name("set")
                 .about("Set the value of a string key to a string")
@@ -33,18 +37,25 @@ fn main() -> Result<()> {
         )
         .get_matches();
 
+    let data_arg = matches.value_of("data").unwrap_or("");
+    let data_path = if !data_arg.is_empty() {
+        PathBuf::from(data_arg)
+    } else {
+        current_dir()?
+    };
+
     match matches.subcommand() {
         ("set", Some(matches)) => {
             let key = matches.value_of("KEY").expect("KEY argument missing");
             let value = matches.value_of("VALUE").expect("VALUE argument missing");
 
-            let mut store = KvStore::open(current_dir()?)?;
+            let mut store = KvStore::open(&data_path)?;
             store.set(key.to_string(), value.to_string())?;
         }
         ("get", Some(matches)) => {
             let key = matches.value_of("KEY").expect("KEY argument missing");
 
-            let mut store = KvStore::open(current_dir()?)?;
+            let mut store = KvStore::open(&data_path)?;
             if let Some(value) = store.get(key.to_string())? {
                 println!("{}", value);
             } else {
@@ -54,7 +65,7 @@ fn main() -> Result<()> {
         ("rm", Some(matches)) => {
             let key = matches.value_of("KEY").expect("KEY argument missing");
 
-            let mut store = KvStore::open(current_dir()?)?;
+            let mut store = KvStore::open(&data_path)?;
             match store.remove(key.to_string()) {
                 Ok(()) => {}
                 Err(KvsError::KeyNotFound) => {

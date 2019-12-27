@@ -1,7 +1,9 @@
 use crate::common::{GetResponse, RemoveResponse, Request, SetResponse};
-use crate::thread_pool::ThreadPool;
 use crate::{KvsEngine, Result};
+use crate::thread_pool::ThreadPool;
+
 use serde_json::Deserializer;
+
 use std::io::{BufReader, BufWriter, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 
@@ -22,18 +24,21 @@ impl<E: KvsEngine, P: ThreadPool> KvsServer<E, P> {
         let listener = TcpListener::bind(addr)?;
         for stream in listener.incoming() {
             let engine = self.engine.clone();
-            self.pool.spawn(move || match stream {
-                Ok(stream) => {
-                    if let Err(e) = serve(engine, stream) {
-                        error!("Error on serving client: {}", e);
+            self.pool.spawn(||{
+                match stream {
+                    Ok(stream) => {
+                        if let Err(e) = serve(engine, stream) {
+                            error!("Error on serving client: {}", e);
+                        }
                     }
+                    Err(e) => error!("Connection failed: {}", e),
                 }
-                Err(e) => error!("Connection failed: {}", e),
             })
         }
         Ok(())
     }
 }
+
 
 fn serve<E: KvsEngine>(engine: E, tcp: TcpStream) -> Result<()> {
     let peer_addr = tcp.peer_addr()?;

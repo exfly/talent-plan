@@ -272,7 +272,7 @@ fn load(
 }
 
 fn log_path(dir: &Path, gen: u64) -> PathBuf {
-    dir.join(format!("{}.log", gen))
+    dir.join(format!("{:016}.log", gen))
 }
 
 /// Struct representing a command
